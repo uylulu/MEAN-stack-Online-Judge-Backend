@@ -20,6 +20,7 @@ process.on('message', (message) => {
             console.log("RAN WITH INPUT")
             
             if(data.error) {
+                console.log(data.error);
                 process.send({status: "error", message: data.error, data: null});
             }
             else {

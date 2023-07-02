@@ -18,6 +18,8 @@ var dbRouter = require('./routes/dbRouter');
 
 mongoose.connect(config.db.url);
 
+console.log(config.db.url);
+
 var app = express();
 
 var cors = require('cors')
