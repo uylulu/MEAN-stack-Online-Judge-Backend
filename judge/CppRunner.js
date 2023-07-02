@@ -18,6 +18,7 @@ process.on('message', (message) => {
     } else {
         compilex.compileCPPWithInput(env , message.code , message.input , function (data) {
             console.log("RAN WITH INPUT")
+            console.log(message.input);
             
             if(data.error) {
                 console.log(data.error);
