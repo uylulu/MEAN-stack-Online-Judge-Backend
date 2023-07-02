@@ -11,8 +11,6 @@ require('dotenv').config()
 
 compilex.init(options);
 
-
-
 const config = require('./config/server-config');
 var middleware = require('./config/middleware');
 var usersRouter = require('./routes/userRouter');

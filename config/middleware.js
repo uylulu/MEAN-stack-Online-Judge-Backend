@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
-const config = require('server-config.js');
+const config = require('./server-config.js');
 
 exports.authenticate = asyncHandler(async (req, res, next) => {
     var headerExists = req.headers.authorization;
