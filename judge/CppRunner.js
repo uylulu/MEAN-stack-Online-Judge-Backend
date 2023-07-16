@@ -1,33 +1,53 @@
-var compilex = require('compilex');
-var env = { OS : "linux" , cmd : "g++" , options : {timeout:10000}};
 const { log } = require('console');
-compilex.init({ stats : true });
+var fs = require('fs');
+const { execFile , exec } = require('child_process');
 
-process.on('message', (message) => {
+const compileCode = (code, id) => {
+    var newCode = fs.createWriteStream(`./temp/${id}.cpp`);
+    newCode.write(code);
+    newCode.end();
 
-    if(!message.input) {
-        compilex.compileCPP(env , message.code , function (data) {
-            if(data.error) {
-                console.log(data.error);
-                process.send({status: "error", message: data.error, data: null});
+    return new Promise((resolve, reject) => {
+        const child = execFile('g++', [`./temp/${id}.cpp`, '-o', `./temp/${id}`], (error, stdout, stderr) => {
+            if(error) {
+                log(error);
+                return;
             }
-            else {
-                process.send({status: "success", message: data.output, data: null});
-            }
+            console.log(stdout);
+            resolve();
         });
-    } else {
-        compilex.compileCPPWithInput(env , message.code , message.input , function (data) {
-            console.log("RAN WITH INPUT")
-            console.log(message.input);
-            
-            if(data.error) {
-                console.log(data.error);
-                process.send({status: "error", message: data.error, data: null});
-            }
-            else {
-                process.send({status: "success", message: data.output, data: null});
-            }
-        });
-    }
+        
+    })
 
+}
+
+var isolate_directory = "/var/local/lib/isolate/0"
+
+process.on('message', async (message) => {
+    var id = message.id,code = message.code;
+
+    await compileCode(code, id);
+
+    exec(`isolate --init`);
+
+    // copy exec file to isolate directory
+    fs.copyFileSync(`./temp/${id}`, isolate_directory + `/box/${id}`);
+    
+    // put input in isolate directory
+    fs.writeFileSync(isolate_directory + `/box/${id}.in`, message.input);
+    
+    // put output in isolate directory
+    fs.writeFileSync(isolate_directory + `/box/${id}.out`, '');
+    
+    // run the exec file
+    exec(`isolate --stdin=${id}.in --stdout=${id}.out --mem=256000 --time=1 --run ${id}`, (error, stdout, stderr) => {
+        if(error) {
+            log(error);
+            process.send({status: "error", message: error});
+            return;
+        }
+        console.log(stdout);
+        var output = fs.readFileSync(isolate_directory + `/box/${id}.out`, 'utf8');
+        process.send({status: "success", message: output});
+    });
 });
